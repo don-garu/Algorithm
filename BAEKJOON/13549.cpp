@@ -3,6 +3,7 @@
 
 using namespace std;
 typedef pair<int, int> pi;
+
 struct compare {
 	bool operator()(pi& a, pi& b) {
 		return a.first > b.first;
