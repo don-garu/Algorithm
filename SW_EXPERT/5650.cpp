@@ -1,127 +1,94 @@
 #include <iostream>
+#include <cstring>
 using namespace std;
+
 struct hole {
-	int y, x;
+	int r, c;
 };
 
 hole warmhole[11][2];
-int N, map[110][110];
-int r, c, dir, score, Answer;
-int dr[4] = { -1, 0, 1, 0 };
-int dc[4] = { 0, 1, 0, -1 };
+int T, N, r, c, dir;
+int map[110][110];
+int score, Answer;
 
-void block(int num) {
-	// 0 - À§, 1 - ¿À, 2 - ¾Æ, 3 - ¿Þ
-	if (num == 1 && (dir == 2 || dir == 3)) {
-		if (dir == 2)
-			dir = 1;
-		else if (dir == 3)
-			dir = 0;
-	}
-	else if (num == 2 && (dir == 0 || dir == 3)) {
-		if (dir == 0)
-			dir = 1;
-		else if (dir == 3)
-			dir = 2;
-	}
-	else if (num == 3 && (dir == 0 || dir == 1)) {
-		if (dir == 0)
-			dir = 3;
-		else if (dir == 1)
-			dir = 2;
-	}
-	else if (num == 4 && (dir == 1 || dir == 2)) {
-		if (dir == 1)
-			dir = 0;
-		else if (dir == 2)
-			dir = 3;
-	}
-	else {
-		dir = (dir + 2) % 4;
+int Block[6][4] = { {0, }, {2, 3, 1, 0}, {1, 3, 0, 2}, {3, 2, 0, 1}, {2, 0, 3, 1}, {2, 3, 0, 1} };
+int dir_x[4] = { 0, 1, 0, -1 }, dir_y[4] = { -1, 0, 1, 0 };
+int holecnt[11];
 
+void solve();
+void move(int sr, int sc, int sdir);
+
+int main() {
+	cin >> T;
+	for (int t = 1; t <= T; t++) {
+		memset(map, 0, sizeof(map));
+		memset(holecnt, 0, sizeof(holecnt));
+		cin >> N;
+		for (int i = 1; i <= N; i++) {
+			for (int j = 1; j <= N; j++) {
+				cin >> map[i][j];
+				if (map[i][j] >= 6) {
+					warmhole[map[i][j]][holecnt[map[i][j]]].r = i;
+					warmhole[map[i][j]][holecnt[map[i][j]]].c = j;
+					holecnt[map[i][j]]++;
+				}
+			}
+		}
+		solve();
+		cout << "#" << t << " " << Answer << "\n";
 	}
 }
 
 void warf(int num) {
-	if (r == warmhole[num][0].y && c == warmhole[num][0].x) {
-		r = warmhole[num][1].y;
-		c = warmhole[num][1].x;
+	if (warmhole[num][0].r == r && warmhole[num][0].c == c) {
+		r = warmhole[num][1].r;
+		c = warmhole[num][1].c;
 	}
 	else {
-		r = warmhole[num][0].y;
-		c = warmhole[num][0].x;
+		r = warmhole[num][0].r;
+		c = warmhole[num][0].c;
 	}
 }
 
-void simulate(int sr, int sc, int sdir) {
-	int holecnt[11] = { 0, };
-	r = sr;
-	c = sc;
-	dir = sdir;
+void move(int sr, int sc, int sdir) {
 	score = 0;
+	r = sr, c = sc, dir = sdir;
+	memset(holecnt, 0, sizeof(holecnt));
 	while (1) {
-		if ((r == sr && c == sc && score > 0) || map[r][c] == -1)
+		if ((score > 0 && r == sr && c == sc) || map[r][c] == -1)
 			break;
 		if (r < 1 || r > N || c < 1 || c > N) {
 			dir = (dir + 2) % 4;
 			score++;
 		}
 		else {
-			if (map[r][c] >= 1 && map[r][c] <= 5) {
-				block(map[r][c]);
-				score++;
-			}
-			else if (map[r][c] >= 6) {
+			if (map[r][c] >= 6) {
 				if (holecnt[map[r][c]] >= 2)
 					break;
 				warf(map[r][c]);
 				holecnt[map[r][c]]++;
 			}
+			else if (map[r][c] >= 1 && map[r][c] <= 5) {
+				dir = Block[map[r][c]][dir];
+				score++;
+			}
 		}
-		r = r + dr[dir];
-		c = c + dc[dir];
+		r = r + dir_y[dir];
+		c = c + dir_x[dir];
 	}
-	if (score > Answer)
+	if (Answer < score)
 		Answer = score;
 }
 
-int main() {
-	int T;
-	cin >> T;
-	for (int t = 1; t <= T; t++) {
-		for (int i = 0; i < 11; i++) {
-			warmhole[i][0].y = 0;
-			warmhole[i][0].x = 0;
-			warmhole[i][1].y = 0;
-			warmhole[i][1].y = 0;
-		}
-		cin >> N;
-
-		for (int i = 1; i <= N; i++) {
-			for (int j = 1; j <= N; j++) {
-				cin >> map[i][j];
-				if (map[i][j] >= 6) {
-					if (warmhole[map[i][j]][0].y == 0 && warmhole[map[i][j]][0].x == 0) {
-						warmhole[map[i][j]][0].y = i;
-						warmhole[map[i][j]][0].x = j;
-					}
-					else {
-						warmhole[map[i][j]][1].y = i;
-						warmhole[map[i][j]][1].x = j;
-					}
+void solve() {
+	Answer = 0;
+	for (int i = 1; i <= N; i++) {
+		for (int j = 1; j <= N; j++) {
+			if (map[i][j] == 0) {
+				for (int k = 0; k < 4; k++) {
+					move(i, j, k);
 				}
 			}
 		}
-		Answer = 0;
-		for (int i = 1; i <= N; i++) {
-			for (int j = 1; j <= N; j++) {
-				if (map[i][j] == 0) {
-					for (int k = 0; k < 4; k++) {
-						simulate(i, j, k);
-					}
-				}
-			}
-		}
-		cout << "#" << t << " " << Answer << "\n";
 	}
 }
